@@ -32,20 +32,28 @@ fn find_2020_product(input_values: Vec<u32>) -> u32 {
     // I'm in a time bind. I know there has to be a more elegant way to do this:
     let mut i = 0;
     let mut j = 1;
+    let mut k = 2;
 
     while i < input_values.len() {
         while j < input_values.len() {
-            let lhs = input_values[i];
-            let rhs = input_values[j];
+            while k < input_values.len() {
+                let lhs = input_values[i];
+                let mid = input_values[j];
+                let rhs = input_values[k];
 
-            if lhs + rhs == 2020 {
-                return lhs * rhs;
+                if lhs + mid + rhs == 2020{
+                    return lhs * mid * rhs;
+                }
+                k += 1;
             }
 
             j += 1;
+            k = j + 1;
         }
+
         i += 1;
         j = i + 1;
+        k = j + 1;
     }
     
     0
