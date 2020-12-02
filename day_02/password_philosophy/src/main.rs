@@ -2,22 +2,23 @@ use std::{error::Error, fs};
 
 struct AuditItem {
     target_char: char,
-    char_min: u8,
-    char_max: u8,
+    first_position: usize,
+    second_position: usize,
     password: String,
 }
 
 impl AuditItem {
     fn is_valid(&self) -> bool {
-        let mut target_count = 0;
+        // This is optimistic, assuming password length aligns with policy indexes
+        let char_at_first_index = self.password.chars()
+            .nth(self.first_position - 1)
+            .unwrap();
 
-        for character in self.password.chars(){
-            if character == self.target_char {
-                target_count += 1;
-            }
-        }
+        let char_at_second_index = self.password.chars()
+            .nth(self.second_position - 1)
+            .unwrap();
 
-        target_count >= self.char_min && target_count <= self.char_max
+        (char_at_first_index == self.target_char) ^ (char_at_second_index == self.target_char)
     }
 }
 
@@ -45,8 +46,8 @@ fn get_audits(input_file: &str) -> Result<Vec<AuditItem>, Box<dyn Error>>{
 
 fn parse_audit(audit_line: &str) -> AuditItem {
     let mut target_char :char = 'a';
-    let mut char_min: u8 = 0;
-    let mut char_max: u8 = 0;
+    let mut first_position: usize = 0;
+    let mut second_position: usize = 0;
     let mut password: String = String::new();
     
     // we know the exact structure of the input document, so we can parse by index
@@ -56,8 +57,8 @@ fn parse_audit(audit_line: &str) -> AuditItem {
         match prop {
             0 => {
                 let min_max: Vec<&str> = props[prop].split('-').collect();
-                char_min = min_max[0].parse().unwrap();
-                char_max = min_max[1].parse().unwrap();
+                first_position = min_max[0].parse().unwrap();
+                second_position = min_max[1].parse().unwrap();
             },
             1 => target_char = props[prop]
                     .chars()
@@ -70,8 +71,8 @@ fn parse_audit(audit_line: &str) -> AuditItem {
 
     AuditItem {
         target_char,
-        char_min,
-        char_max,
+        first_position,
+        second_position,
         password,
     }
 }
