@@ -10,8 +10,7 @@ struct Trajectory {
 
 // This exercise is to count how many times a toboggan would hit trees with the given trajectories and terrain
 fn main() {
-    let input_text = "input.txt";
-    let snow_field = survey_snow_field(input_text);
+    let snow_field = survey_snow_field("input.txt");
     let snow_field = snow_field.unwrap();
     
     let toboggan_trajectories: Vec<Trajectory> = vec![
