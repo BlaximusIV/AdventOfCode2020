@@ -8,14 +8,27 @@ struct Trajectory {
     horiz_travel: usize
 }
 
+// This exercise is to count how many times a toboggan would hit trees with the given trajectories and terrain
 fn main() {
     let input_text = "input.txt";
-    let toboggan_trajectory = Trajectory { vert_travel:1, horiz_travel:3 };
-
     let snow_field = survey_snow_field(input_text);
-    let collision_count = plot_course_collisions(toboggan_trajectory, snow_field.unwrap());
+    let snow_field = snow_field.unwrap();
+    
+    let toboggan_trajectories: Vec<Trajectory> = vec![
+        Trajectory { horiz_travel: 1, vert_travel: 1 },
+        Trajectory { horiz_travel: 3, vert_travel: 1 },
+        Trajectory { horiz_travel: 5, vert_travel: 1 },
+        Trajectory { horiz_travel: 7, vert_travel: 1 },
+        Trajectory { horiz_travel: 1, vert_travel: 2 },
+    ];
 
-    println!("{} tree collisions on the plotted course.", collision_count);
+
+    let mut collision_product = 1;
+    for trajectory in toboggan_trajectories {
+        collision_product *= plot_course_collisions(trajectory, &snow_field);
+    }
+
+    println!("The product of all collision counts is {}", collision_product);
 }
 
 /// import the input text that represents the field to travel through
@@ -35,7 +48,7 @@ fn survey_snow_field(input_text: &str) -> Result<Vec<Vec<char>>, Box<dyn Error>>
     Ok(snow_field)
 }
 
-fn plot_course_collisions(trajectory: Trajectory, field: Vec<Vec<char>>) -> usize {
+fn plot_course_collisions(trajectory: Trajectory, field: &Vec<Vec<char>>) -> usize {
     let tree_character = '#';
     let field_width = field[0].len();
 
@@ -47,7 +60,7 @@ fn plot_course_collisions(trajectory: Trajectory, field: Vec<Vec<char>>) -> usiz
 
         advance_course(&mut y_pos, &mut x_pos, &field_width, &trajectory);
 
-        if y_pos == field.len(){
+        if y_pos >= field.len(){
             break;
         }
 
