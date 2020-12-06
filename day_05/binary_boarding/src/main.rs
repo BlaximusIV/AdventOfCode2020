@@ -1,14 +1,17 @@
 use std::{error::Error, fs};
 
+#[derive(Debug, Eq, Ord, PartialEq, PartialOrd)]
 struct BoardingPass {
+    ticket: String,
     row: usize,
     column: usize,
     seat_id: usize,
 }
 
 impl BoardingPass {
-    fn new(row: usize, column: usize ) -> Self {
+    fn new(ticket: String, row: usize, column: usize ) -> Self {
         Self{
+            ticket,
             row,
             column,
             seat_id: (row * 8) + column,
@@ -19,9 +22,11 @@ impl BoardingPass {
 /// Today's exercise is for finding seats given a ticket
 fn main() {
     let tickets = import_tickets("input.txt");
+    let (passes, max_id) = get_boarding_passes(tickets.unwrap());
 
-    let (_passes, max_id) = get_boarding_passes(tickets.unwrap());
-
+    let missing_id = find_missing_seat(passes);
+    
+    println!("Missing ID: {}", missing_id);
     println!("Max ID: {}", max_id);
 }
 
@@ -43,50 +48,87 @@ fn get_boarding_passes(tickets: Vec<String>) -> (Vec<BoardingPass>, usize){
 
     for ticket in tickets {
         let pass = BoardingPass::new(
-            get_position(&ticket[..7],0, 127, 'F'),
-            get_position(&ticket[7..], 0, 7, 'L')
+        ticket.to_string(),
+            find_position(ticket[..7].to_string(), 'F', 127),
+            find_position(ticket[7..].to_string(),'L', 7)
         );
 
         if pass.seat_id > max_id {
             max_id = pass.seat_id
         }
 
-        println!("row: {}; column: {}; sid: {}", pass.row, pass.column, pass.seat_id);
         passes.push(pass);
     }
     
     (passes, max_id)
 }
 
-fn get_position(directions: &str, range_min: usize, range_max: usize, direction_char: char) -> usize {
-    let mut row_range: (usize,usize) = (range_min, range_max);
+fn find_position(direction: String, lower_char: char, max_range: usize) -> usize {
+    let translations = &direction[..direction.len() - 1];
+    let final_char = &direction[direction.len() -1..];
 
-    for i in 0..directions.chars().count(){
-        let c = directions.chars().nth(i).unwrap();
-
-        if i == directions.len() - 1{
-            if c == direction_char {
-                return row_range.0;
-            } else {
-                return row_range.1;
-            };
-        } else {
-            halve_range(&mut row_range, c == direction_char);
-        }
+    let mut range = (0, max_range);
+    for c in translations.chars(){
+        halve_range(&mut range, c == lower_char);
     }
-     0
+
+    if final_char.contains(lower_char) {
+        range.0
+    } else {
+        range.1
+    }
 }
 
 fn halve_range(range: &mut (usize, usize), take_lower: bool) {
-    if range.0 == range.1 {
-        return;
-    }
-
-    let mid = range.0 + (range.1 - range.0) / 2;
+    let change = ((range.1 - range.0) / 2) + 1;
 
     if take_lower {
-        range.1 = mid - 1;
+        range.1 -= change;
     } else {
-        range.0 = mid + 1;
+        range.0 += change;
     }
+}
+
+fn find_missing_seat(mut passes: Vec<BoardingPass>) -> usize {
+    &passes.sort_by(|a, b| a.seat_id.cmp(&b.seat_id));
+
+    let mut missing_id = passes[0].seat_id;
+
+    for pass in passes {
+        if missing_id != pass.seat_id {
+            return missing_id;
+        }
+
+        missing_id += 1;
+    }
+
+    panic!("No missing id found");
+}
+
+#[test]
+fn get_correct_passes() {
+    let passes = get_boarding_passes(vec![
+        "BFFFBBFRRR".to_string(), 
+        "FFFBBBFRRR".to_string(),
+        "BBFFBBFRLL".to_string(),
+        "FBFBBFFRLR".to_string(),
+    ]);
+
+    let passes = passes.0;
+
+    assert_eq!(passes[0].row, 70);
+    assert_eq!(passes[0].column, 7);
+    assert_eq!(passes[0].seat_id, 567);
+
+    assert_eq!(passes[1].row, 14);
+    assert_eq!(passes[1].column, 7);
+    assert_eq!(passes[1].seat_id, 119);
+
+    assert_eq!(passes[2].row, 102);
+    assert_eq!(passes[2].column, 4);
+    assert_eq!(passes[2].seat_id, 820);
+
+    assert_eq!(passes[3].row, 44);
+    assert_eq!(passes[3].column, 5);
+    assert_eq!(passes[3].seat_id, 357);
 }
